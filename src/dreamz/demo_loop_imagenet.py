@@ -79,14 +79,18 @@ def train(size, widths, imagenet_model, chan_to_opt):
 def get_imagenet_model():
     model = models.resnet18(pretrained=True)
     model = nn.Sequential(*(
-        [i for i in model.children()][:-4] + [
+        [i for i in model.children()][:-2] + [
             nn.AdaptiveAvgPool2d(output_size=(1, 1)),
             Lambda(lambda x: x[:, :, 0, 0])]))
+    # model = nn.Sequential(*(
+    #     [i for i in model.children()][:-3] + [
+    #         nn.AdaptiveAvgPool2d(output_size=(1, 1)),
+    #         Lambda(lambda x: x[:, :, 0, 0])]))
     return model.eval()
 
 
 device = 'cuda'
-ims_savedir = '../../data/output_ims/'
+ims_savedir = '../../data/output_ims2/'
 widths = [20] * 8
 size = [59, 105]
 
