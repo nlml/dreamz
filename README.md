@@ -1,6 +1,6 @@
 # dreamz
 deep learning-driven visual art stuff
 
-![](examples/eg1.png?)
-![](examples/eg2.png?)
-![](examples/eg3.png?)
+![](example_ims/eg1.png)
+![](example_ims/eg2.png)
+![](example_ims/eg3.png)

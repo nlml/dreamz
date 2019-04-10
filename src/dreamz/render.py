@@ -1,12 +1,13 @@
 import torch
 from dreamz.utils import display_tch_im
+from tqdm import tqdm
 
 
-def train_visualiser(objective, param_f, opt, iters=100, log_interval=10,
+def train_visualiser(objective, im_gen_fn, opt, iters=100, log_interval=10,
                      debug_log_interval=0, debug_print_fn=None):
-    for i in range(iters):
+    for i in tqdm(range(iters)):
         opt.zero_grad()
-        gend_img = param_f()
+        gend_img = im_gen_fn()
         cost = objective(gend_img)
         cost.backward()
         if debug_log_interval and i % debug_log_interval == 0:

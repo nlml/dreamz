@@ -1,6 +1,6 @@
 import numpy as np
 from PIL import Image
-# import pylab as plt
+import pylab as plt
 import os
 
 
