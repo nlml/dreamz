@@ -26,6 +26,11 @@ def composite_activation(x):
     return torch.cat([x / 0.67, (x * x) / 0.6], 1)
 
 
+def composite_activation_unbiased(x):
+    x = torch.atan(x)
+    return torch.cat([x / 0.6706, (x * x - 0.45) / 0.396], 1)
+
+
 class CPPNNet(nn.Module):
     def __init__(
             self,

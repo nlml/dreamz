@@ -4,18 +4,26 @@ from tqdm import tqdm
 
 
 def train_visualiser(objective, im_gen_fn, opt, iters=100, log_interval=10,
-                     debug_log_interval=0, debug_print_fn=None):
-    for i in tqdm(range(iters)):
+                     debug_log_interval=0, debug_print_fn=None, sched=[],
+                     big_save_fn=None):
+    sched_pts = [i[0] for i in sched]
+    for it in tqdm(range(iters)):
+        if it in sched_pts:
+            sched_fn = [i[1] for i in sched if i[0] == it][0]
+            sched_fn(opt)
         opt.zero_grad()
-        gend_img = im_gen_fn()
+        pct_done = float(it) / iters
+        gend_img = im_gen_fn(pct_done)
         cost = objective(gend_img)
         cost.backward()
-        if debug_log_interval and i % debug_log_interval == 0:
+        if debug_log_interval and it % debug_log_interval == 0:
             debug_print_fn()
         opt.step()
-        if log_interval and i % log_interval == 0:
+        if log_interval and it % log_interval == 0:
             print('cost', cost.item())
             display_tch_im(gend_img)
+            if big_save_fn is not None:
+                big_save_fn()
 
 
 def test_xor(im_gen_fn, device, opt, size=32):
