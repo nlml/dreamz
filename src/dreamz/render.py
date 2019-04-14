@@ -13,8 +13,8 @@ def train_visualiser(objective, im_gen_fn, opt, iters=100, log_interval=10,
             sched_fn(opt)
         opt.zero_grad()
         pct_done = float(it) / iters
-        gend_img = im_gen_fn(pct_done)
-        cost = objective(gend_img)
+        gend_img, other = im_gen_fn(pct_done)
+        cost = objective(gend_img, other)
         cost.backward()
         if debug_log_interval and it % debug_log_interval == 0:
             debug_print_fn()
