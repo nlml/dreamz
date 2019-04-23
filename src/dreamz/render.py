@@ -36,7 +36,7 @@ def test_xor(im_gen_fn, device, opt, size=32):
 
     xor_im = get_xor_im(size)
 
-    def xor_objective(output):
+    def xor_objective(output, _):
         return torch.mean((output - xor_im) ** 2)
 
     train_visualiser(xor_objective, im_gen_fn, opt)

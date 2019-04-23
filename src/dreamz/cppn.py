@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from dreamz.torch_layers import Lambda
@@ -29,6 +30,16 @@ def composite_activation(x):
 def composite_activation_unbiased(x):
     x = torch.atan(x)
     return torch.cat([x / 0.6706, (x * x - 0.45) / 0.396], 1)
+
+
+def get_cppn_im_gen_fn_and_opt(size, device, widths=None, opt=None):
+    xy = get_xy_mesh(size).to(device)
+    if widths is None:
+        widths = [24] * 3
+    viz = CPPNNet(widths).to(device)
+    if opt is None:
+        opt = lambda p: optim.SGD(p, lr=0.1, momentum=0.9)  # noqa
+    return lambda _: (viz(xy), None), opt(viz.parameters())
 
 
 class CPPNNet(nn.Module):
@@ -80,11 +91,40 @@ class CPPNNet(nn.Module):
         return x
 
 
-def get_cppn_im_gen_fn_and_opt(size, device, widths=None, opt=None):
-    xy = get_xy_mesh(size).to(device)
-    if widths is None:
-        widths = [24] * 3
-    viz = CPPNNet(widths).to(device)
-    if opt is None:
-        opt = lambda p: optim.SGD(p, lr=0.1, momentum=0.9)  # noqa
-    return lambda: viz(xy), opt(viz.parameters())
+class UpsampleNet(nn.Module):
+    def __init__(self, base_model, reps=2, output_channels=3,
+                 interp_mode='bilinear'):
+        super(UpsampleNet, self).__init__()
+        self.base_model = base_model
+        self.interp_mode = interp_mode
+        self.reps = reps
+        self.output_channels = output_channels
+        
+        s = self.base_model.output_channels
+        
+        self.conv1 = self.get_group_of_layers(self.reps, s, s)
+        self.conv2 = self.get_group_of_layers(self.reps - 1, s * 2, s)
+        self.conv3 = nn.Conv2d(s * 2, output_channels, 3)
+        self.final_act = nn.Sigmoid()
+        
+    def get_group_of_layers(self, reps, s0, s, k=1):
+        this = []
+        for i in range(reps):
+            this += [nn.Conv2d(s0, s, k)]
+            nn.init.normal_(
+                this[-1].weight,
+                std=np.sqrt(1 / (s0 * (k ** 2)))
+            )
+            this += [Lambda(composite_activation)]
+            s0 = s * 2
+        return nn.Sequential(*this)
+
+    def forward(self, x):
+        x = self.base_model.layers(x)
+        x = self.conv1(x)
+        x = F.interpolate(x, scale_factor=2, mode=self.interp_mode)
+        x = self.conv2(x)
+        x = F.interpolate(x, scale_factor=2, mode=self.interp_mode)
+        x = self.conv3(x)
+        x = self.final_act(x)
+        return x[:, :, 3:-3, 3:-3]
