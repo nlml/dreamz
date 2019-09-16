@@ -1,0 +1,42 @@
+<canvas id="myCanvas" width="1000" height="1000"></canvas>
+
+
+<script>
+	var canvas = document.getElementById('myCanvas');
+	var hue= 0;
+	var rate= 1;
+
+	function draw(){
+	    var context = canvas.getContext('2d'),
+	        height= canvas.height,
+	        width = canvas.width;
+	    
+	    var imageData = context.getImageData(0, rate, width, height - 1);
+	    context.putImageData(imageData, 0, 0);
+	    context.save();
+	    // context.translate(0, translation);
+	 
+	    //context.clearRect(0, 0 , width, -1);
+	    context.fillStyle = 'hsl(' + hue + ',100%, 50%)';
+	    //context.strokeStyle = 'hsl(' + hue + ',50%,100%)';
+	    context.beginPath();
+	    context.fillRect(0,height- rate, width, rate);
+	     //context.moveTo(0, height - rate);
+	    //context.lineTo(width, height - rate);
+	    //hiddenContext.drawImage(canvas, 0, 0);
+	    //context.drawImage(canvas2, 0, -rate);
+
+	    
+	    //context.lineWidth =rate;
+	    //context.closePath();
+	    //context.stroke();
+	    context.restore();
+	    
+	    
+	    hue += rate;
+	    requestAnimationFrame(draw);
+	}
+
+
+	requestAnimationFrame(draw);
+</script>

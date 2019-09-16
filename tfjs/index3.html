@@ -1,0 +1,72 @@
+<canvas id="myCanvas" style="width: 400px; height: 300px; background-color: #000000"></canvas>
+      
+
+<script>
+Benchmark.prototype.setup = function() {
+
+
+    var i = 0;
+    var pixelData1 = [];
+    var pixelData2 = [];
+    var occupied = [];
+    for (var j = 0; j < 40; j++) occupied[j] = [];
+
+
+    while (i < 100) {
+        var x = Math.floor(Math.random() * 40);
+        var y = Math.floor(Math.random() * 30);
+        if (!occupied[x][y]) {
+            occupied[x][y] = true;
+            pixelData1[i] = {
+                x: x,
+                y: y,
+                r: Math.floor(Math.random() * 255),
+                g: Math.floor(Math.random() * 255),
+                b: Math.floor(Math.random() * 255)
+            };
+            pixelData2[i] = {
+                x: x,
+                y: y,
+                c: "rgb(" + pixelData1[i].r + "," +
+                    pixelData1[i].g + "," +
+                    pixelData1[i].b + ")"
+            };
+            i++;
+        }
+    }
+
+
+};
+      
+</script>
+    
+
+
+<script>
+	var c2 = document.getElementById("myCanvas");
+	var ctx2 = c2.getContext("2d");
+
+	var c1 = document.createElement("canvas");
+	c1.width = 40;
+	c1.height = 30;
+	var ctx1 = c1.getContext("2d");
+
+	var imgData = ctx1.createImageData(40, 30);
+	for (var i=0; i<pixelData1.length; i++) {
+	    var j = 4 * (40 * pixelData1[i].y + pixelData1[i].x);
+	    imgData.data[j] = pixelData1[i].r;
+	    imgData.data[j+1] = pixelData1[i].g;
+	    imgData.data[j+2] = pixelData1[i].b;
+	    imgData.data[j+3] = 255;
+	}
+	ctx1.putImageData(imgData, 0, 0);
+
+	c2.width = 400;
+	c2.height = 300;
+	ctx2.mozImageSmoothingEnabled = false;
+	ctx2.webkitImageSmoothingEnabled = false;
+	ctx2.msImageSmoothingEnabled = false;
+	ctx2.imageSmoothingEnabled = false;
+	ctx2.drawImage(c1, 0, 0, 400, 300);
+
+</script>
