@@ -1,4 +1,5 @@
 var canvas = document.getElementById("myCanvas");
+var intervalHandle = null;
 
 function getXYMesh(size, r = 3.0 ** 0.5) {
 	if (size[0] >= size[1]) {
@@ -50,7 +51,7 @@ function getModel(inputSize) {
 
 	const model = tf.sequential();
 	model.add(tf.layers.conv2d({
-		inputShape: [2, inputSize[0], inputSize[1]],
+		inputShape: [4, inputSize[0], inputSize[1]],
 		kernelSize: 1,
 		filters: 8,
 		strides: 1,
@@ -58,10 +59,10 @@ function getModel(inputSize) {
 		dataFormat: 'channelsFirst'
 	}));
 	model.add(compositeActivation());
-	for (var i = 0; i < 20; i++) {
+	for (var i = 0; i < 14; i++) {
 		model.add(tf.layers.conv2d({
 			kernelSize: 1,
-			filters: 8,
+			filters: 6,
 			strides: 1,
 			kernelInitializer: 'glorotNormal',
 			dataFormat: 'channelsFirst'
@@ -95,14 +96,12 @@ function mousey(evt) {
 
 function reRender() {
 	var canvas = document.getElementById("myCanvas");
-	canvas.width = 600;
-	canvas.height = 600;
-	const size = [
-		Math.floor(canvas.width),
-		Math.floor(canvas.height)
-	];
+	canvas.width = 100;
+	canvas.height = 100;
+	const size = [canvas.height, canvas.width];
 	const model = getModel(size);
 	var xy = getXYMesh(size);
+	var mouseMesh = getXYMesh(size, r=1.0);
 
 	var ctx2 = canvas.getContext("2d");
 
@@ -112,31 +111,32 @@ function reRender() {
 	var ctx1 = c1.getContext("2d");
 
 	var frameIdx = 0;
-	var totalFrames = 100;
-	var outer = setInterval(function() {
-		if (frameIdx > totalFrames) {
-			clearInterval(outer);
-		} else {
-			console.log(frameIdx);
-			console.log(canvasMouseDistFromCtrX);
-			const tt = tf.tensor([canvasMouseDistFromCtrY, canvasMouseDistFromCtrX]).reshape([1, 2, 1, 1])
-			const output = model.apply(xy.add(tt)).concat(
-				tf.ones([1, 1, size[0], size[1]]), 1).mul(
-				255).toInt().transpose([0, 2, 3, 1]);
-			const values = output.dataSync();
+	if (intervalHandle !== null) {
+		clearInterval(intervalHandle);
+		intervalHandle = null;
+	}
+	intervalHandle = setInterval(function() {
+		// console.log(frameIdx);
+		// console.log(canvasMouseDistFromCtrX);
+		const tt = tf.tensor([canvasMouseDistFromCtrY, canvasMouseDistFromCtrX]).reshape([1, 2, 1, 1])
+		const ss = tf.square(mouseMesh.sub(tt));
+		const output = model.apply(xy.add(tt).concat(ss, 1)).concat(
+		// const output = model.apply(xy.mul(ss)).concat(
+			tf.ones([1, 1, size[0], size[1]]), 1).mul(
+			255).toInt().transpose([0, 2, 3, 1]);
+		const values = output.dataSync();
 
-			var imgData = ctx1.createImageData(size[0], size[1]);
+		var imgData = ctx1.createImageData(size[0], size[1]);
 
-			imgData.data.set(Uint8ClampedArray.from(values));
-			ctx1.putImageData(imgData, 0, 0);
+		imgData.data.set(Uint8ClampedArray.from(values));
+		ctx1.putImageData(imgData, 0, 0);
 
-			ctx2.mozImageSmoothingEnabled = false;
-			ctx2.webkitImageSmoothingEnabled = false;
-			ctx2.msImageSmoothingEnabled = false;
-			ctx2.imageSmoothingEnabled = false;
-			ctx2.drawImage(c1, 0, 0, size[0], size[1]);
-			frameIdx++;
-		}
+		ctx2.mozImageSmoothingEnabled = false;
+		ctx2.webkitImageSmoothingEnabled = false;
+		ctx2.msImageSmoothingEnabled = false;
+		ctx2.imageSmoothingEnabled = false;
+		ctx2.drawImage(c1, 0, 0, size[0], size[1]);
+		frameIdx++;
 	}, 50);
 }
 canvas.addEventListener('click', reRender, false);
