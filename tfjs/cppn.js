@@ -1,5 +1,6 @@
 var canvas = document.getElementById("myCanvas");
 var intervalHandle = null;
+var sizeMulti = 4;
 
 function getXYMesh(size, r = 3.0 ** 0.5) {
 	if (size[0] >= size[1]) {
@@ -47,7 +48,7 @@ function compositeActivation() {
 	return new CompositeActivation();
 }
 
-function getModel(inputSize) {
+function getModelOld(inputSize) {
 
 	const model = tf.sequential();
 	model.add(tf.layers.conv2d({
@@ -69,6 +70,42 @@ function getModel(inputSize) {
 		}));
 		model.add(compositeActivation());
 	}
+	model.add(tf.layers.conv2d({
+		kernelSize: 1,
+		filters: 3,
+		strides: 1,
+		kernelInitializer: 'glorotNormal',
+		dataFormat: 'channelsFirst',
+		activation: 'sigmoid'
+	}));
+	return model
+}
+
+function getModel(inputSize) {
+
+	const model = tf.sequential();
+	model.add(tf.layers.conv2d({
+		inputShape: [4, inputSize[0], inputSize[1]],
+		kernelSize: 1,
+		filters: 8,
+		strides: 1,
+		kernelInitializer: 'glorotNormal',
+		dataFormat: 'channelsFirst'
+	}));
+	model.add(compositeActivation());
+	for (var i = 0; i < 5; i++) {
+		model.add(tf.layers.conv2d({
+			kernelSize: 1,
+			filters: 8,
+			strides: 1,
+			kernelInitializer: 'glorotNormal',
+			dataFormat: 'channelsFirst'
+		}));
+		model.add(compositeActivation());
+	}
+	model.add(tf.layers.reshape({
+		targetShape: [8, inputSize[0] * sizeMulti, inputSize[1] * sizeMulti]
+	}));
 	model.add(tf.layers.conv2d({
 		kernelSize: 1,
 		filters: 3,
@@ -120,13 +157,13 @@ function reRender() {
 		// console.log(canvasMouseDistFromCtrX);
 		const tt = tf.tensor([canvasMouseDistFromCtrY, canvasMouseDistFromCtrX]).reshape([1, 2, 1, 1])
 		const ss = tf.square(mouseMesh.sub(tt));
-		const output = model.apply(xy.add(tt).concat(ss, 1)).concat(
-		// const output = model.apply(xy.mul(ss)).concat(
-			tf.ones([1, 1, size[0], size[1]]), 1).mul(
+		var output = model.apply(xy.add(tt).concat(ss, 1))
+		output = output.concat(
+			tf.ones([1, 1, size[0] * sizeMulti, size[1] * sizeMulti]), 1).mul(
 			255).toInt().transpose([0, 2, 3, 1]);
 		const values = output.dataSync();
 
-		var imgData = ctx1.createImageData(size[0], size[1]);
+		var imgData = ctx1.createImageData(size[0] * sizeMulti, size[1] * sizeMulti);
 
 		imgData.data.set(Uint8ClampedArray.from(values));
 		ctx1.putImageData(imgData, 0, 0);
