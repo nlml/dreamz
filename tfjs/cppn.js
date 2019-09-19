@@ -104,7 +104,21 @@ function getModel(inputSize) {
 		model.add(compositeActivation());
 	}
 	model.add(tf.layers.reshape({
-		targetShape: [8, inputSize[0] * sizeMulti, inputSize[1] * sizeMulti]
+		targetShape: [4, inputSize[0] * 2, inputSize[1] * 2]
+	}));
+	model.add(compositeActivation());
+	for (var i = 0; i < 5; i++) {
+		model.add(tf.layers.conv2d({
+			kernelSize: 1,
+			filters: 8,
+			strides: 1,
+			kernelInitializer: 'glorotNormal',
+			dataFormat: 'channelsFirst'
+		}));
+		model.add(compositeActivation());
+	}
+	model.add(tf.layers.reshape({
+		targetShape: [4, inputSize[0] * 4, inputSize[1] * 4]
 	}));
 	model.add(tf.layers.conv2d({
 		kernelSize: 1,
@@ -133,8 +147,8 @@ function mousey(evt) {
 
 function reRender() {
 	var canvas = document.getElementById("myCanvas");
-	canvas.width = 100;
-	canvas.height = 100;
+	canvas.width = 50;
+	canvas.height = 50;
 	const size = [canvas.height, canvas.width];
 	const model = getModel(size);
 	var xy = getXYMesh(size);
