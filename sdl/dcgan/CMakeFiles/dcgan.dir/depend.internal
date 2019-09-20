@@ -43,6 +43,7 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/ATen/core/List.h
  /home/liam/libtorch/include/ATen/core/List_inl.h
  /home/liam/libtorch/include/ATen/core/MT19937RNGEngine.h
+ /home/liam/libtorch/include/ATen/core/Macros.h
  /home/liam/libtorch/include/ATen/core/PhiloxRNGEngine.h
  /home/liam/libtorch/include/ATen/core/Reduction.h
  /home/liam/libtorch/include/ATen/core/Scalar.h
@@ -54,6 +55,13 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/ATen/core/alias_info.h
  /home/liam/libtorch/include/ATen/core/aten_interned_strings.h
  /home/liam/libtorch/include/ATen/core/blob.h
+ /home/liam/libtorch/include/ATen/core/dispatch/DispatchTable.h
+ /home/liam/libtorch/include/ATen/core/dispatch/Dispatcher.h
+ /home/liam/libtorch/include/ATen/core/dispatch/KernelCache.h
+ /home/liam/libtorch/include/ATen/core/dispatch/KernelFunction.h
+ /home/liam/libtorch/include/ATen/core/dispatch/OperatorEntry.h
+ /home/liam/libtorch/include/ATen/core/dispatch/OperatorOptions.h
+ /home/liam/libtorch/include/ATen/core/dispatch/RegistrationHandleRAII.h
  /home/liam/libtorch/include/ATen/core/function_schema.h
  /home/liam/libtorch/include/ATen/core/function_schema_inl.h
  /home/liam/libtorch/include/ATen/core/functional.h
@@ -62,6 +70,11 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/ATen/core/ivalue.h
  /home/liam/libtorch/include/ATen/core/ivalue_inl.h
  /home/liam/libtorch/include/ATen/core/jit_type.h
+ /home/liam/libtorch/include/ATen/core/op_registration/infer_schema.h
+ /home/liam/libtorch/include/ATen/core/op_registration/kernel_function.h
+ /home/liam/libtorch/include/ATen/core/op_registration/kernel_functor.h
+ /home/liam/libtorch/include/ATen/core/op_registration/kernel_lambda.h
+ /home/liam/libtorch/include/ATen/core/op_registration/op_registration.h
  /home/liam/libtorch/include/ATen/core/qualified_name.h
  /home/liam/libtorch/include/ATen/core/stack.h
  /home/liam/libtorch/include/ATen/detail/CUDAHooksInterface.h
@@ -95,6 +108,7 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/c10/macros/Macros.h
  /home/liam/libtorch/include/c10/macros/cmake_macros.h
  /home/liam/libtorch/include/c10/util/AlignOf.h
+ /home/liam/libtorch/include/c10/util/Array.h
  /home/liam/libtorch/include/c10/util/ArrayRef.h
  /home/liam/libtorch/include/c10/util/BFloat16-inl.h
  /home/liam/libtorch/include/c10/util/BFloat16.h
@@ -106,7 +120,9 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/c10/util/Half-inl.h
  /home/liam/libtorch/include/c10/util/Half.h
  /home/liam/libtorch/include/c10/util/IdWrapper.h
+ /home/liam/libtorch/include/c10/util/LeftRight.h
  /home/liam/libtorch/include/c10/util/Logging.h
+ /home/liam/libtorch/include/c10/util/Metaprogramming.h
  /home/liam/libtorch/include/c10/util/Optional.h
  /home/liam/libtorch/include/c10/util/Registry.h
  /home/liam/libtorch/include/c10/util/SmallVector.h
@@ -115,6 +131,7 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/c10/util/TypeList.h
  /home/liam/libtorch/include/c10/util/TypeTraits.h
  /home/liam/libtorch/include/c10/util/UniqueVoidPtr.h
+ /home/liam/libtorch/include/c10/util/either.h
  /home/liam/libtorch/include/c10/util/flat_hash_map.h
  /home/liam/libtorch/include/c10/util/intrusive_ptr.h
  /home/liam/libtorch/include/c10/util/logging_is_google_glog.h
@@ -230,15 +247,20 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/torch/csrc/jit/argument_spec.h
  /home/liam/libtorch/include/torch/csrc/jit/attributes.h
  /home/liam/libtorch/include/torch/csrc/jit/constants.h
+ /home/liam/libtorch/include/torch/csrc/jit/custom_operator.h
  /home/liam/libtorch/include/torch/csrc/jit/function.h
  /home/liam/libtorch/include/torch/csrc/jit/graph_executor.h
  /home/liam/libtorch/include/torch/csrc/jit/graph_node_list.h
+ /home/liam/libtorch/include/torch/csrc/jit/import.h
  /home/liam/libtorch/include/torch/csrc/jit/interpreter.h
  /home/liam/libtorch/include/torch/csrc/jit/ir.h
  /home/liam/libtorch/include/torch/csrc/jit/named_value.h
+ /home/liam/libtorch/include/torch/csrc/jit/operator.h
+ /home/liam/libtorch/include/torch/csrc/jit/operator_options.h
  /home/liam/libtorch/include/torch/csrc/jit/passes/shape_analysis.h
  /home/liam/libtorch/include/torch/csrc/jit/scope.h
  /home/liam/libtorch/include/torch/csrc/jit/script/compilation_unit.h
+ /home/liam/libtorch/include/torch/csrc/jit/script/function_schema_parser.h
  /home/liam/libtorch/include/torch/csrc/jit/script/module.h
  /home/liam/libtorch/include/torch/csrc/jit/script/slot.h
  /home/liam/libtorch/include/torch/csrc/jit/source_range.h
@@ -257,3 +279,4 @@ CMakeFiles/dcgan.dir/dcgan.cpp.o
  /home/liam/libtorch/include/torch/csrc/utils/tensor_numpy.h
  /home/liam/libtorch/include/torch/csrc/utils/variadic.h
  /home/liam/libtorch/include/torch/extension.h
+ /home/liam/libtorch/include/torch/script.h
