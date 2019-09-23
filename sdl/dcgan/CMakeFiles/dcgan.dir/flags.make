@@ -6,5 +6,5 @@ CXX_FLAGS =   -D_GLIBCXX_USE_CXX11_ABI=1 -std=gnu++11
 
 CXX_DEFINES = -DAT_PARALLEL_OPENMP=1 -D_THP_CORE
 
-CXX_INCLUDES = -I/usr/include/SDL2 -isystem /home/liam/libtorch/include -isystem /home/liam/libtorch/include/torch/csrc/api/include 
+CXX_INCLUDES = -I/usr/include/SDL2 -isystem /home/liam/libtorch/include -isystem /home/liam/libtorch/include/torch/csrc/api/include -isystem /usr/local/cuda-10.0/include 
 

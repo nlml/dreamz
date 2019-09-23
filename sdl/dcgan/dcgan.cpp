@@ -6,61 +6,71 @@
 #include <thread>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
-#include<cmath>
+#include <cmath>
+#include <memory>
+#include "ltimer.cpp"
+
+using namespace std;
 
 
-#define WIDTH 100
-#define HEIGHT 100
+#define WIDTH 600
+#define HEIGHT 600
 
 
 int main(int argc, char **argv)
 {
+    torch::DeviceType device_type = at::kCUDA;
+    const int MAX_FPS = 30;
+    const int SCREEN_TICKS_PER_FRAME = 1000 / MAX_FPS;
+
+
     if (argc != 3)
     {
-        std::cerr << "usage: example-app <path-to-exported-script-module>\n";
+        std::cerr << "usage: example-app <path-to-exported-script-module> <other-module-path>\n";
         return -1;
     }
 
-    torch::jit::script::Module module;
-    try
-    {
-        // Deserialize the ScriptModule from a file using torch::jit::load().
-        module = torch::jit::load(argv[1]);
-    }
-    catch (const c10::Error &e)
-    {
-        std::cerr << "error loading the model\n";
-        return -1;
-    }
-    torch::jit::script::Module cppn;
-    try
-    {
-        // Deserialize the ScriptModule from a file using torch::jit::load().
-        cppn = torch::jit::load(argv[2]);
-    }
-    catch (const c10::Error &e)
-    {
-        std::cerr << "error loading the model\n";
-        return -1;
-    }
+    torch::jit::script::Module module = torch::jit::load(argv[1], device_type);
+    torch::jit::script::Module cppn = torch::jit::load(argv[2], device_type);
 
     std::cout << "ok1\n";
+    // cppn.to(device_type);
+    // module.to(device_type);
+    std::cout << "ok2\n";
+
     // Create a vector of inputs for the xy meshgrid
     std::vector<torch::jit::IValue> inputs;
-    inputs.push_back(torch::ones({2}) * WIDTH);
-    inputs.push_back(torch::ones({1}) * pow(3.0, 0.5));
-    std::vector<torch::jit::IValue> xy;
+    // inps.push_back(torch::tensor(extra).to(device_type));
+    inputs.push_back(torch::tensor({(int) HEIGHT, (int) WIDTH}).to(device_type));
+    inputs.push_back(torch::ones({1}).to(device_type) * pow(3.0, 0.5));
+    // std::vector<torch::jit::IValue> xy;
     // Calc the meshgrid
-    xy.push_back(module.forward(inputs));
+    at::Tensor xy = module.forward(inputs).toTensor().to(device_type);
+    // at::Tensor xy = module.forward(inputs).toTensor();
 
     bool leftMouseButtonDown = false;
+    double mouseX = 0.0;
+    double mouseY = 0.0;
     bool quit = false;
     SDL_Event event;
 
+    //The frames per second timer
+    LTimer fpsTimer;
+
+    //The frames per second cap timer
+    LTimer capTimer;
+
+    //In memory text stream
+    std::stringstream timeText;
+
+    //Start counting frames per second
+    int countedFrames = 0;
+    fpsTimer.start();
+
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window *window = SDL_CreateWindow("SDL2 Pixel Drawing",
-                                          SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, 0);
+    SDL_Window *window = SDL_CreateWindow(
+        "SDL2 Pixel Drawing", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, 0);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_Texture *texture = SDL_CreateTexture(renderer,
@@ -69,64 +79,82 @@ int main(int argc, char **argv)
 
     memset(pixels, 255, WIDTH * HEIGHT * 4 * sizeof(Uint8));
 
-
+    // int max = 100;
+    // for (int i = 0; i < max; ++i)
     while (!quit)
     {
-        try
-        {
-            // Deserialize the ScriptModule from a file using torch::jit::load().
-            cppn = torch::jit::load(argv[2]);
-        }
-        catch (const c10::Error &e)
-        {
-            std::cerr << "error loading the model\n";
-            return -1;
-        }
+        //Start cap timer
+        capTimer.start();
+
         clock_t tStart = clock();
         SDL_UpdateTexture(texture, NULL, pixels, WIDTH * sizeof(Uint32));
 
-        at::Tensor t = cppn.forward(xy).toTensor();
+        std::vector<torch::jit::IValue> inps;
+        inps.push_back(xy);
+        // inps.push_back(torch::ones({2}).to(device_type) * 0.1 * i);
+        float extra[2] = {
+            (float) ((mouseY / HEIGHT - 0.5) * 2.0),
+            (float) ((mouseX / WIDTH  - 0.5) * 2.0)
+        };
+        inps.push_back(torch::tensor(extra).to(device_type));
+
+        at::Tensor t = cppn.forward(inps).toTensor().to(at::kCPU);
         t = t * 255.0;
         t = at::reshape(t, -1);
         t = t.toType(torch::kUInt8);
         // std::cout << "tensor dtype = " << t.dtype() << std::endl;
         auto array = t.accessor<unsigned char, 1>();
-
         for(int i = 0; i < array.size(0); i++)
         {
             pixels[i] = array[i];
         }
 
-        // SDL_WaitEvent(&event);
+        //Handle events on queue
+        while( SDL_PollEvent( &event ) != 0 )
+        {
+            if( event.type == SDL_QUIT )
+            {
+                quit = true;
+            }
+            switch (event.type)
+            {
+                case SDL_MOUSEBUTTONUP:
+                    if (event.button.button == SDL_BUTTON_LEFT)
+                        leftMouseButtonDown = false;
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (event.button.button == SDL_BUTTON_LEFT)
+                        leftMouseButtonDown = true;
+                case SDL_MOUSEMOTION:
+                    mouseX = event.motion.x;
+                    mouseY = event.motion.y;
+            }
+        }
 
-        // switch (event.type)
-        // {
-        //     case SDL_QUIT:
-        //         quit = true;
-        //         break;
-        //     case SDL_MOUSEBUTTONUP:
-        //         if (event.button.button == SDL_BUTTON_LEFT)
-        //             leftMouseButtonDown = false;
-        //         break;
-        //     case SDL_MOUSEBUTTONDOWN:
-        //         if (event.button.button == SDL_BUTTON_LEFT)
-        //             leftMouseButtonDown = true;
-        //     case SDL_MOUSEMOTION:
-        //         if (leftMouseButtonDown)
-        //         {
-        //             int mouseX = event.motion.x;
-        //             int mouseY = event.motion.y;
-        //             pixels[(mouseY * WIDTH + mouseX) * 4 + 2] = 255;
-        //             pixels[(mouseY * WIDTH + 1 + mouseX) * 4 + 2] = 255;
-        //             pixels[(mouseY * WIDTH - 1 + mouseX) * 4 + 2] = 255;
-        //         }
-        //         break;
-        // }
+        //Calculate and correct fps
+        countedFrames++;
+        float avgFPS = countedFrames / ( fpsTimer.getTicks() / 1000.f );
+        if( avgFPS > 2000000 )
+        {
+            avgFPS = 0;
+        }
+        //Set text to be rendered
+        std::cout << "Average Frames Per Second (With Cap) " << avgFPS << std::endl;
+
 
         // SDL_RenderClear(renderer);
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
         printf("Time taken: %.6fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
+        std::cout << extra[0] << " " << extra[1] << std::endl;
+
+        //If frame finished early
+        int frameTicks = capTimer.getTicks();
+        if( frameTicks < SCREEN_TICKS_PER_FRAME )
+        {
+            //Wait remaining time
+            SDL_Delay( SCREEN_TICKS_PER_FRAME - frameTicks );
+        }
     }
 
     delete[] pixels;

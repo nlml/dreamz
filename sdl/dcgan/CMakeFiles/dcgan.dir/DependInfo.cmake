@@ -19,6 +19,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/include/SDL2"
   "/home/liam/libtorch/include"
   "/home/liam/libtorch/include/torch/csrc/api/include"
+  "/usr/local/cuda-10.0/include"
   )
 
 # Targets to which this target links.

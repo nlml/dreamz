@@ -10,5 +10,5 @@ INCLUDE(FindPkgConfig)
 PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 
 include_directories(${SDL2_INCLUDE_DIRS})
-target_link_libraries(dcgan ${SDL2_LIBRARIES} "${TORCH_LIBRARIES}")
+target_link_libraries(dcgan ${SDL2_LIBRARIES} ${TORCH_LIBRARIES})
 set_property(TARGET dcgan PROPERTY CXX_STANDARD 11)

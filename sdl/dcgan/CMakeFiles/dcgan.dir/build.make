@@ -92,7 +92,22 @@ dcgan: CMakeFiles/dcgan.dir/dcgan.cpp.o
 dcgan: CMakeFiles/dcgan.dir/build.make
 dcgan: /home/liam/libtorch/lib/libtorch.so
 dcgan: /home/liam/libtorch/lib/libc10.so
+dcgan: /usr/lib/x86_64-linux-gnu/libcuda.so
+dcgan: /usr/local/cuda-10.0/lib64/libnvrtc.so
+dcgan: /usr/local/cuda-10.0/lib64/libnvToolsExt.so
+dcgan: /usr/local/cuda-10.0/lib64/libcudart.so
+dcgan: /home/liam/libtorch/lib/libc10_cuda.so
+dcgan: /home/liam/libtorch/lib/libc10_cuda.so
 dcgan: /home/liam/libtorch/lib/libc10.so
+dcgan: /usr/local/cuda-10.0/lib64/libcudart.so
+dcgan: /usr/local/cuda/lib64/libnvToolsExt.so
+dcgan: /usr/local/cuda/lib64/libcudart.so
+dcgan: /usr/local/cuda-10.0/lib64/libcufft.so
+dcgan: /usr/local/cuda-10.0/lib64/libcurand.so
+dcgan: /usr/local/cuda-10.0/lib64/libcudnn.so
+dcgan: /usr/local/cuda/lib64/libculibos.a
+dcgan: /usr/local/cuda/lib64/libculibos.a
+dcgan: /usr/local/cuda-10.0/lib64/libcublas.so
 dcgan: CMakeFiles/dcgan.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/liam/dreamz/sdl/dcgan/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable dcgan"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/dcgan.dir/link.txt --verbose=$(VERBOSE)
