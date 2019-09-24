@@ -13,8 +13,8 @@
 using namespace std;
 
 
-#define WIDTH 600
-#define HEIGHT 600
+#define WIDTH 792
+#define HEIGHT 792
 
 
 int main(int argc, char **argv)
@@ -40,8 +40,7 @@ int main(int argc, char **argv)
 
     // Create a vector of inputs for the xy meshgrid
     std::vector<torch::jit::IValue> inputs;
-    // inps.push_back(torch::tensor(extra).to(device_type));
-    inputs.push_back(torch::tensor({(int) HEIGHT, (int) WIDTH}).to(device_type));
+    inputs.push_back(torch::tensor({(int) 200, (int) 200}).to(device_type));
     inputs.push_back(torch::ones({1}).to(device_type) * pow(3.0, 0.5));
     // std::vector<torch::jit::IValue> xy;
     // Calc the meshgrid
@@ -91,17 +90,17 @@ int main(int argc, char **argv)
 
         std::vector<torch::jit::IValue> inps;
         inps.push_back(xy);
-        // inps.push_back(torch::ones({2}).to(device_type) * 0.1 * i);
         float extra[2] = {
             (float) ((mouseY / HEIGHT - 0.5) * 2.0),
             (float) ((mouseX / WIDTH  - 0.5) * 2.0)
         };
         inps.push_back(torch::tensor(extra).to(device_type));
+        std::cout << extra[0] << " " << extra[1] << std::endl;
 
-        at::Tensor t = cppn.forward(inps).toTensor().to(at::kCPU);
+        at::Tensor t = cppn.forward(inps).toTensor();
         t = t * 255.0;
         t = at::reshape(t, -1);
-        t = t.toType(torch::kUInt8);
+        t = t.to(at::kCPU).toType(torch::kUInt8);
         // std::cout << "tensor dtype = " << t.dtype() << std::endl;
         auto array = t.accessor<unsigned char, 1>();
         for(int i = 0; i < array.size(0); i++)
@@ -146,7 +145,6 @@ int main(int argc, char **argv)
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
         printf("Time taken: %.6fs\n", (double)(clock() - tStart) / CLOCKS_PER_SEC);
-        std::cout << extra[0] << " " << extra[1] << std::endl;
 
         //If frame finished early
         int frameTicks = capTimer.getTicks();
