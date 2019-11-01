@@ -9,6 +9,8 @@
 #include <cmath>
 #include <memory>
 #include "ltimer.cpp"
+#include <signal.h>
+#include "rtmidi/RtMidi.h"
 
 using namespace std;
 
@@ -16,6 +18,14 @@ using namespace std;
 #define WIDTH 792
 #define HEIGHT 792
 
+
+void usage( void ) {
+    // Error function in case of incorrect command-line
+    // argument specifications.
+    std::cout << "\nusage: qmidiin <port>\n";
+    std::cout << "        where port = the device to use (first / default = 0).\n\n";
+    exit( 0 );
+}
 
 int main(int argc, char **argv)
 {
@@ -36,7 +46,6 @@ int main(int argc, char **argv)
     std::cout << "ok1\n";
     // cppn.to(device_type);
     // module.to(device_type);
-    std::cout << "ok2\n";
 
     // Create a vector of inputs for the xy meshgrid
     std::vector<torch::jit::IValue> inputs;
@@ -76,12 +85,59 @@ int main(int argc, char **argv)
                            SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT);
     Uint8 *pixels = new Uint8[WIDTH * HEIGHT * 4];
 
+
+    // Midi stuff
+    // port = (unsigned int) atoi( argv[1] );
+    RtMidiIn *midiin = 0;
+    std::vector<unsigned char> message;
+    int nBytes, i;
+    double stamp;
+
+    // Minimal command-line check.
+    if ( argc > 2 ) usage();
+
+    // RtMidiIn constructor
+    try {
+        midiin = new RtMidiIn();
+    }
+    catch ( RtMidiError &error ) {
+        error.printMessage();
+        exit( EXIT_FAILURE );
+    }
+
+    unsigned int port = 1; // change this to midi device port - see midiprobe executable to check it
+    unsigned int nPorts = midiin->getPortCount();
+
+    if ( port >= nPorts ) {
+        delete midiin;
+        std::cout << "Invalid port specifier!\n";
+        usage();
+    }
+
+    try {
+        midiin->openPort( port );
+    }
+    catch ( RtMidiError &error ) {
+        error.printMessage();
+        goto cleanup;
+    }
+    // 
+
+
     memset(pixels, 255, WIDTH * HEIGHT * 4 * sizeof(Uint8));
 
     // int max = 100;
     // for (int i = 0; i < max; ++i)
     while (!quit)
     {
+        // midi stuff
+        stamp = midiin->getMessage( &message );
+        nBytes = message.size();
+        for ( i=0; i<nBytes; i++ )
+            std::cout << "Byte " << i << " = " << (int)message[i] << ", ";
+        if ( nBytes > 0 )
+            std::cout << "stamp = " << stamp << std::endl;
+        ////
         //Start cap timer
         capTimer.start();
 
@@ -161,6 +217,12 @@ int main(int argc, char **argv)
 
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    return 0;
+
+    // Clean up
+ cleanup:
+    delete midiin;
 
     return 0;
 }

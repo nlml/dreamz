@@ -1,3 +1,0 @@
-/home/liam/dreamz/sdl/dcgan/CMakeFiles/rebuild_cache.dir
-/home/liam/dreamz/sdl/dcgan/CMakeFiles/edit_cache.dir
-/home/liam/dreamz/sdl/dcgan/CMakeFiles/dcgan.dir

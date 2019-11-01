@@ -1,0 +1,4 @@
+g++ -o qmidiin qmidiin.cpp -lrtmidi && ./qmidiin
+
+with torch
+g++ -std=c++17 -o qmidiin qmidiin.cpp -I /home/liam/libtorch/include/torch/csrc/api/include/ -I /home/liam/libtorch/include/ -L /home/liam/libtorch/lib/ -lc10 -ltorch -lrtmidi
