@@ -213,11 +213,14 @@ int main(int argc, char **argv)
         if (VERBOSE)
             std::cout << extra[0] << " " << extra[1] << std::endl;
 
+        // Forward pass of the model
         outputTensor = cppnModule.forward(inputsToCPPN).toTensor();
         outputTensor = outputTensor * 255.0;
         outputTensor = at::reshape(outputTensor, -1);
         outputTensor = outputTensor.to(at::kCPU).toType(torch::kUInt8);
         // std::cout << "tensor dtype = " << outputTensor.dtype() << std::endl;
+
+        // Assign output pixels to pixel buffer
         auto array = outputTensor.accessor<unsigned char, 1>();
         for(int i = 0; i < array.size(0); i++)
         {
@@ -253,7 +256,7 @@ int main(int argc, char **argv)
         {
             avgFPS = 0;
         }
-        //Set text to be rendered
+        //Print fps
         if (VERBOSE) {
             std::cout << "Average Frames Per Second (With Cap) " << avgFPS << std::endl;
         }
