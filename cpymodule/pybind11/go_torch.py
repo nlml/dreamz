@@ -1,3 +1,4 @@
+from midi_stuff import get_rtmidi_obj, process_midi_msg_stack
 import os
 from copy import deepcopy
 import time
@@ -6,50 +7,39 @@ import numpy as np
 import torch
 import torch.nn as nn
 from dreamz.cppn import get_xy_mesh, CPPNNet, UpsampleNet
-import rtmidi as rr
+from skimage.transform import resize
 
 
 MIDI_PORT = 2
 MOMENTUM = 0.99
-EXCESS = 3.
-TRANSITION_SPEED = 0.8
+EXCESS = 0.5
+TRANSITION_SPEED = 0.3
+WARP_SPEED = 0.005
 
 
-def get_midi_msg_stack():
-    midi_msg_stack = []
-    count = 0
-    while True:
-        msg = r.getMessage()
-        if msg is None:
-            if count > 0:
-                print(count)
-            break
-        else:
-            midi_msg_stack.append(msg)
-            count += 1
-    return midi_msg_stack
+class PixelRenderer:
 
+    def __init__(self, w, h):
+        # Make the window
+        self.w = w
+        self.h = h
+        example.setup(self.h, self.w, 0, 0)
+        self.a = example.make_array(w * h * 3)
+        self.last_frame_time = time.time()
+        self.fps = 30.0
+        self.frame_count = 0
 
-def process_midi_event(n):
-    if 'NOTE ON' in str(n):
-        return n.getNoteNumber()
-    return None
+    def render(self, im):
+        self.frame_count += 1
+        self.a = im.reshape(-1)
+        example.render(self.a, self.w)
+        self.fps = 0.9 * self.fps + 0.1 * 1.0 / (time.time() - self.last_frame_time)
+        if self.frame_count % 10 == 0:
+            print(round(self.fps, 2))
+        self.last_frame_time = time.time()
 
-
-def process_midi_msg_stack():
-    midi_msg_stack = get_midi_msg_stack()
-    out = []
-    while len(midi_msg_stack):
-        n = midi_msg_stack[0]
-        event = process_midi_event(n)
-        if event is not None:  # useful event
-            out.append(event)
-        midi_msg_stack = midi_msg_stack[1:]
-    return out
-
-
-r = rr.RtMidiIn()
-r.openPort(MIDI_PORT)
+    def shutdown(self):
+        example.kill()
 
 
 class Wrapper(nn.Module):
@@ -66,7 +56,7 @@ class Wrapper(nn.Module):
 
 def get_targ():
     targ = np.random.rand(2).astype(np.float32) * 2.0 - 1.0
-    print('new targ: ', targ)
+    # print('new targ: ', targ)
     targ = torch.FloatTensor(targ).to(device)
     return targ
 
@@ -76,6 +66,8 @@ def interpolate_state_dicts(state_dicts, alpha):
         new_state_dict[k] = new_state_dict[k] * (1 - alpha) + state_dicts[1][k] * alpha
     return new_state_dict
 
+
+rtmidi_obj = get_rtmidi_obj(MIDI_PORT)
 
 size = [108 * 1.5, 192 * 1.5]
 size = [int(i) for i in size]
@@ -104,40 +96,42 @@ def get_actual_size():
     return out.shape[1:3]
 
 h, w = get_actual_size()
-print(h, w, 'actul')
-example.setup(h, w)
-a = example.make_array(w * h * 3)
+# h, w = 1080, 1920
+print(h, w, 'actual size')
 
 current_sd_sel = list(range(1, len(state_dicts)))
 sd_changes_counter = 0
 next_sd_sel = sd_changes_counter % len(state_dicts)
 
-fps = 10.0
-
-curr_state_dict_interp_alpha = 0.0
-curr_state_dict_interp_direction = 1.0
+curr_state_dict_interp_alpha = 0.5
+curr_state_dict_interp_target = 1.0 + EXCESS
 changed = False
+
+renderer = PixelRenderer(w, h)
 
 for i in range(50000):
 
-    TRANSITION_SPEED *= 0.99
-
-    midi_events = process_midi_msg_stack()
+    midi_events = process_midi_msg_stack(rtmidi_obj)
     if len(midi_events):
-        print(midi_events)
+        # print(midi_events)
         if 36 in midi_events:
-            TRANSITION_SPEED = 0.9
+            curr_state_dict_interp_target *= -1.0
+        for ev in midi_events:
+            if isinstance(ev, tuple):
+                if ev[0] == 3:
+                    WARP_SPEED = ev[1] / 127.0 + 0.005
 
-    curr_state_dict_interp_alpha += curr_state_dict_interp_direction * TRANSITION_SPEED
-    if curr_state_dict_interp_alpha >= (1.0 + EXCESS):
-        curr_state_dict_interp_direction = -1.0
+    curr_state_dict_interp_grad = curr_state_dict_interp_target - curr_state_dict_interp_alpha
+    curr_state_dict_interp_alpha += curr_state_dict_interp_grad * TRANSITION_SPEED
+    if curr_state_dict_interp_alpha >= 1.0:
+        # curr_state_dict_interp_target = -1.0
         if not changed:
             current_sd_sel = [next_sd_sel, current_sd_sel[1]]
             sd_changes_counter += 1
             next_sd_sel = sd_changes_counter % len(state_dicts)
             changed = True
-    elif curr_state_dict_interp_alpha <= (0.0 - EXCESS):
-        curr_state_dict_interp_direction = 1.0
+    elif curr_state_dict_interp_alpha <= -1.0:
+        # curr_state_dict_interp_target = 1.0
         if not changed:
             current_sd_sel = [current_sd_sel[0], next_sd_sel]
             sd_changes_counter += 1
@@ -146,25 +140,20 @@ for i in range(50000):
     
     # if i % 1 == 0:
         # print(curr_state_dict_interp_alpha, 'alpha')
-    if curr_state_dict_interp_alpha <= 1.0 and curr_state_dict_interp_alpha >= 0.0:
+    if curr_state_dict_interp_alpha <= 1.0 and curr_state_dict_interp_alpha >= -1.0:
         changed = False
-        viz.load_state_dict(interpolate_state_dicts([state_dicts[i_sd] for i_sd in current_sd_sel], curr_state_dict_interp_alpha))
+        viz.load_state_dict(interpolate_state_dicts(
+            [state_dicts[i_sd] for i_sd in current_sd_sel], curr_state_dict_interp_alpha / 2 + 0.5))
         m = Wrapper(viz).to(device)
-
 
     now = time.time()
     # a *= 0
     grad_use = (1 - MOMENTUM) * grad + MOMENTUM * grad_use
-    other -= 0.05 * grad_use
+    other -= WARP_SPEED * grad_use
     with torch.no_grad():
         out = m(mesh, other)
     if torch.min(torch.abs(other - targ)) < 0.05:
         targ = get_targ()
     grad = other - targ
-    a = (out[0].cpu().numpy() * 255).astype(np.uint8).reshape(-1)
-    example.render(a, w)
-    fps = 0.9 * fps + 0.1 * 1.0 / (time.time() - now)
-    if i % 10 == 0:
-        print(fps)
-
-# example.kill()
+    to_render = (out[0].cpu().numpy() * 255).astype(np.uint8)
+    renderer.render(to_render)

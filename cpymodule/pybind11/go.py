@@ -15,7 +15,7 @@ im = (im * 255).astype(np.uint8)
 # im = np.concatenate([im, im[:, :, :1] * 0 + 255], 2)
 print(im.shape, w*h*3, np.product(im.shape))
 
-example.setup(h, w)
+example.setup(h, w, 0, 0)
 a = example.make_array(w*h*3)
 # time.sleep(2)
 

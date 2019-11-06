@@ -1,26 +1,18 @@
 #include <SDL2/SDL.h>
-
 #include <SDL2/SDL_render.h>
-
 #include <iostream>
-
 #include <vector>
-
 #include <pybind11/pybind11.h>
-
 #include "pybind11/pybind11.h"
-
 #include "pybind11/numpy.h"
 
 namespace py = pybind11;
 using namespace std;
 
+
 SDL_Window * window;
-
 SDL_Renderer * renderer;
-
 SDL_RendererInfo info;
-
 SDL_Texture * texture;
 
 // Numpy matrix classes
@@ -48,12 +40,13 @@ void wrapper(py::array_t < unsigned char > array, int width) {
     render(ptr, width);
 }
 
-void setup(int w, int h) {
+void setup(int w, int h, int win_x, int win_y) {
     window = SDL_CreateWindow(
         "SDL2",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        win_y, win_x,
+        // SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         h, w,
-        SDL_WINDOW_SHOWN
+        SDL_WINDOW_FULLSCREEN_DESKTOP
     );
 
     renderer = SDL_CreateRenderer(
@@ -74,7 +67,7 @@ void killMe() {
 
 PYBIND11_MODULE(example, m) {
     m.doc() = "render pixels to SDL2 window"; // optional module docstring
-    m.def("setup", & setup, "Start renderer", py::arg("i"), py::arg("j"));
+    m.def("setup", & setup, "Start renderer", py::arg("h"), py::arg("w"), py::arg("win_y"), py::arg("win_x"));
     m.def("render", & wrapper, "Render one frame");
     m.def("kill", & killMe, "Shut down");
     m.def("make_array", & make_array,
