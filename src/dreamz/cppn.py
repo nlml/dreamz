@@ -128,3 +128,37 @@ class UpsampleNet(nn.Module):
         x = self.conv3(x)
         x = self.final_act(x)
         return x[:, :, 3:-3, 3:-3]
+
+
+class UpsampleNetNew(nn.Module):
+    def __init__(self, input_channels, reps=2, output_channels=3,
+                 interp_mode='bilinear', extra_upscale=False, k=7, s=10):
+        super(UpsampleNetNew, self).__init__()
+        self.interp_mode = interp_mode
+        self.reps = reps
+        self.output_channels = output_channels
+        self.extra_upscale = extra_upscale
+
+        self.conv1 = self.get_layer(input_channels, s, k)
+        self.conv2 = self.get_layer(s * 2, s, k)
+        inps = s * 2
+        self.conv3 = nn.Conv2d(inps, output_channels, 3, bias=False)
+        nn.init.normal_(self.conv3.weight, std=np.sqrt(1 / (inps * (k ** 2))))
+        self.final_act = nn.Sigmoid()
+        
+    def get_layer(self, s0, s, k=1):
+        this = nn.Conv2d(s0, s, k, bias=False, dilation=2)
+        nn.init.normal_(this.weight, std=np.sqrt(1 / (s0 * (k ** 2))))
+        this = [this, Lambda(composite_activation)]
+        return nn.Sequential(*this)
+
+    def forward(self, x):
+        if self.extra_upscale:
+            x = F.interpolate(x, scale_factor=2, mode=self.interp_mode)
+        x = self.conv1(x)
+        x = F.interpolate(x, scale_factor=3, mode=self.interp_mode)
+        x = self.conv2(x)
+        x = F.interpolate(x, scale_factor=3, mode=self.interp_mode)
+        x = self.conv3(x)
+        x = self.final_act(x)
+        return x[:, :, 3:-3, 3:-3]

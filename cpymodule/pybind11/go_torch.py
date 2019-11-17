@@ -1,5 +1,5 @@
 # from cppn_v1 import get_net
-from cppn_v2 import get_net
+from cppn_v3 import get_net
 from midi_stuff import get_rtmidi_obj, process_midi_msg_stack
 from copy import deepcopy
 import time
@@ -15,6 +15,7 @@ MOMENTUM = 0.99
 EXCESS = 0.5
 TRANSITION_SPEED = 0.3
 WARP_SPEED = 0.005
+OTHER_DIM = 6
 
 
 class PixelRenderer:
@@ -26,7 +27,7 @@ class PixelRenderer:
         example.setup(self.h, self.w, 0, 0)
         self.a = example.make_array(w * h * 3)
         self.last_frame_time = time.time()
-        self.fps = 30.0
+        self.fps = 10.0
         self.frame_count = 0
 
     def render(self, im):
@@ -43,7 +44,7 @@ class PixelRenderer:
 
 
 def get_targ():
-    targ = np.random.rand(2).astype(np.float32) * 2.0 - 1.0
+    targ = np.random.rand(OTHER_DIM).astype(np.float32) * 2.0 - 1.0
     # print('new targ: ', targ)
     targ = torch.FloatTensor(targ).to(device)
     return targ
@@ -58,8 +59,8 @@ def interpolate_state_dicts(state_dicts, alpha):
 
 rtmidi_obj = get_rtmidi_obj(MIDI_PORT)
 
-size = [108 * 1.5, 192 * 1.5]
-size = [108 * 2.513089005, 192 * 2.513089005]
+size = [108 * 1, 192 * 1]
+# size = [108 * 2.513089005, 192 * 2.513089005]
 size = [int(round(i)) for i in size]
 mesh = get_xy_mesh(size)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -68,8 +69,8 @@ state_dicts, viz, m = get_net(device)
 
 mesh = mesh.to(device)
 
-other = torch.FloatTensor([0., 0.]).to(device)
-grad = torch.FloatTensor([0., 0.]).to(device)
+other = torch.FloatTensor([0.] * OTHER_DIM).to(device)
+grad = torch.FloatTensor([0.] * OTHER_DIM).to(device)
 grad_use = grad.clone()
 targ = get_targ()
 
@@ -111,6 +112,8 @@ for i in range(50000):
     if curr_state_dict_interp_alpha >= 1.0:
         # curr_state_dict_interp_target = -1.0
         if not changed:
+            viz.load_state_dict(interpolate_state_dicts(
+                [state_dicts[i_sd] for i_sd in current_sd_sel], 1.0))
             current_sd_sel = [next_sd_sel, current_sd_sel[1]]
             sd_changes_counter += 1
             next_sd_sel = sd_changes_counter % len(state_dicts)
@@ -118,13 +121,15 @@ for i in range(50000):
     elif curr_state_dict_interp_alpha <= -1.0:
         # curr_state_dict_interp_target = 1.0
         if not changed:
+            viz.load_state_dict(interpolate_state_dicts(
+                [state_dicts[i_sd] for i_sd in current_sd_sel], 0.0))
             current_sd_sel = [current_sd_sel[0], next_sd_sel]
             sd_changes_counter += 1
             next_sd_sel = sd_changes_counter % len(state_dicts)
             changed = True
 
     # if i % 1 == 0:
-        # print(curr_state_dict_interp_alpha, 'alpha')
+    #     print(curr_state_dict_interp_alpha, 'alpha')
     if curr_state_dict_interp_alpha <= 1.0 and curr_state_dict_interp_alpha >= -1.0:
         changed = False
         viz.load_state_dict(interpolate_state_dicts(

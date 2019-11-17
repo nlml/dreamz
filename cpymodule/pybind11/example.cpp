@@ -46,6 +46,7 @@ void setup(int w, int h, int win_x, int win_y) {
         win_y, win_x,
         // SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         h, w,
+        // SDL_WINDOW_SHOWN
         SDL_WINDOW_FULLSCREEN_DESKTOP
     );
 
