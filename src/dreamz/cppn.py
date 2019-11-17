@@ -50,7 +50,8 @@ class CPPNNet(nn.Module):
             act_fn=composite_activation,
             use_bn=False,
             input_channels=2,
-            output_channels=3):
+            output_channels=,3,
+            final_act='sigmoid'):
 
         super(CPPNNet, self).__init__()
         self.use_bn = use_bn
@@ -74,7 +75,10 @@ class CPPNNet(nn.Module):
                 chans0 = chans1 * 2
             self.layers.append(this)
         self.layers = nn.Sequential(*self.layers)
-        self.final_act = nn.Sigmoid()
+        if final_act == 'sigmoid':
+            self.final_act = nn.Sigmoid()
+        else:
+            self.final_act = None
 
     def do_debug_prints(self):
         print('weight', self.layers[-2][0].weight.mean().item())
@@ -87,7 +91,8 @@ class CPPNNet(nn.Module):
                 print(x.view(-1).mean(), x.view(-1).std())
         else:
             x = self.layers(x)
-        x = self.final_act(x)
+        if self.final_act is not None:
+            x = self.final_act(x)
         return x
 
 
