@@ -50,7 +50,7 @@ class CPPNNet(nn.Module):
             act_fn=composite_activation,
             use_bn=False,
             input_channels=2,
-            output_channels=,3,
+            output_channels=3,
             final_act='sigmoid'):
 
         super(CPPNNet, self).__init__()
