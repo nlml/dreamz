@@ -23,9 +23,9 @@ def get_net(device):
     widths = [24] * 8
     basenet = CPPNNet(widths, input_channels=3)
     viz = UpsampleNet(basenet, reps=1)
-    base = '/home/liam/dreamz/data/state_dicts_v2/'
+    base = "/home/liam/dreamz/data/state_dicts_v2/"
     state_dicts = [torch.load(base + i) for i in os.listdir(base)]
-    print(os.listdir(base), 'sds')
+    print(os.listdir(base), "sds")
     state_dicts += state_dicts
     state_dicts += state_dicts
     print(len(state_dicts))

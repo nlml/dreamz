@@ -13,14 +13,14 @@ class App:
         self.img = pg.ImageItem()
         self.plot = self.win.addPlot()
         self.plot.addItem(self.img)
-        self.win.setWindowTitle('My Title')
+        self.win.setWindowTitle("My Title")
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.check_for_new_data_and_replot)
         self.timer.start(100)
         self.win.show()
-        ####  Set Data  
+        ####  Set Data
         self.counter = 0
-        self.fps = 0.
+        self.fps = 0.0
         self.lastupdate = time.time()
 
         self._update()
@@ -31,19 +31,19 @@ class App:
         self.img.setImage(self.data)
 
         now = time.time()
-        dt = (now - self.lastupdate)
+        dt = now - self.lastupdate
         if dt <= 0:
             dt = 0.000000000001
         fps2 = 1.0 / dt
         self.lastupdate = now
         self.fps = self.fps * 0.99 + fps2 * 0.01
-        tx = 'Mean Frame Rate:  {fps:.3f} FPS'.format(fps=self.fps)
+        tx = "Mean Frame Rate:  {fps:.3f} FPS".format(fps=self.fps)
         self.label.setText(tx)
         QtCore.QTimer.singleShot(1, self._update)
         self.counter += 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     app = QtGui.QApplication(sys.argv)
     thisapp = App()

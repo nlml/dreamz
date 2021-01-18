@@ -10,6 +10,7 @@ class NetWrap(nn.Module):
         super(NetWrap, self).__init__()
         self.base_model = base_model
         self.upsample_model = upsample_model
+
     def forward(self, x):
         return self.upsample_model(self.base_model(x))
 
@@ -32,11 +33,13 @@ def get_net(device):
     widths = [24] * 10
     NOISE_VEC_DIM = 6
     base = CPPNNet(widths, input_channels=2 + NOISE_VEC_DIM)
-    upsampler = UpsampleNetNew(base.output_channels, reps=1, extra_upscale=False, k=5)
+    upsampler = UpsampleNetNew(
+        base.output_channels, reps=1, extra_upscale=False, k=5
+    )
     viz = NetWrap(base, upsampler)
-    base = '/home/liam/dreamz/data/state_dicts_v3/'
+    base = "/home/liam/dreamz/data/state_dicts_v3/"
     state_dicts = [torch.load(base + i) for i in os.listdir(base)]
-    print(os.listdir(base), 'sds')
+    print(os.listdir(base), "sds")
     state_dicts += state_dicts
     state_dicts += state_dicts
     print(len(state_dicts))

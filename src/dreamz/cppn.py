@@ -6,7 +6,7 @@ import numpy as np
 from dreamz.torch_layers import Lambda
 
 
-def get_xy_mesh(size=224, r=3.0**0.5):
+def get_xy_mesh(size=224, r=3.0 ** 0.5):
     if type(size) is int:
         size = [size, size]
     if size[0] >= size[1]:
@@ -44,46 +44,50 @@ def get_cppn_im_gen_fn_and_opt(size, device, widths=None, opt=None):
 
 class CPPNNet(nn.Module):
     def __init__(
-            self,
-            n_channels_list,
-            kernel_size=1,
-            act_fn=composite_activation,
-            use_bn=False,
-            input_channels=2,
-            output_channels=3,
-            final_act='sigmoid',
-            bias=True):
-
+        self,
+        n_channels_list,
+        kernel_size=1,
+        act_fn=composite_activation,
+        use_bn=False,
+        input_channels=2,
+        output_channels=3,
+        final_act="sigmoid",
+        bias=True,
+    ):
         super(CPPNNet, self).__init__()
         self.use_bn = use_bn
         self.layers = []
         self.input_channels = input_channels
         self.output_channels = output_channels
-        n_channels_list = [input_channels] + n_channels_list + [output_channels]
+        n_channels_list = (
+            [input_channels] + n_channels_list + [output_channels]
+        )
         chans0 = n_channels_list[0]
         for i, chans1 in enumerate(n_channels_list[1:]):
             this = nn.Sequential()
             if self.use_bn:
-                this.add_module('bn{}'.format(i), nn.BatchNorm2d(chans0))
-            this.add_module('conv{}'.format(i), nn.Conv2d(chans0, chans1, kernel_size, bias=bias))
+                this.add_module("bn{}".format(i), nn.BatchNorm2d(chans0))
+            this.add_module(
+                "conv{}".format(i),
+                nn.Conv2d(chans0, chans1, kernel_size, bias=bias),
+            )
             # Initialise the weight to preserve mean/std
             nn.init.normal_(
-                this[-1].weight,
-                std=np.sqrt(1 / (chans0 * (kernel_size ** 2)))
+                this[-1].weight, std=np.sqrt(1 / (chans0 * (kernel_size ** 2)))
             )
             if i < len(n_channels_list) - 2:
-                this.add_module('act{}'.format(i), Lambda(act_fn))
+                this.add_module("act{}".format(i), Lambda(act_fn))
                 chans0 = chans1 * 2
             self.layers.append(this)
         self.layers = nn.Sequential(*self.layers)
-        if final_act == 'sigmoid':
+        if final_act == "sigmoid":
             self.final_act = nn.Sigmoid()
         else:
             self.final_act = None
 
     def do_debug_prints(self):
-        print('weight', self.layers[-2][0].weight.mean().item())
-        print('grad', torch.abs(self.layers[-2][0].weight.grad).mean())
+        print("weight", self.layers[-2][0].weight.mean().item())
+        print("grad", torch.abs(self.layers[-2][0].weight.grad).mean())
 
     def forward(self, x, debug=False):
         if debug:
@@ -98,29 +102,27 @@ class CPPNNet(nn.Module):
 
 
 class UpsampleNet(nn.Module):
-    def __init__(self, base_model, reps=2, output_channels=3,
-                 interp_mode='bilinear'):
+    def __init__(
+        self, base_model, reps=2, output_channels=3, interp_mode="bilinear"
+    ):
         super(UpsampleNet, self).__init__()
         self.base_model = base_model
         self.interp_mode = interp_mode
         self.reps = reps
         self.output_channels = output_channels
-        
+
         s = self.base_model.output_channels
-        
+
         self.conv1 = self.get_group_of_layers(self.reps, s, s)
         self.conv2 = self.get_group_of_layers(self.reps - 1, s * 2, s)
         self.conv3 = nn.Conv2d(s * 2, output_channels, 3)
         self.final_act = nn.Sigmoid()
-        
+
     def get_group_of_layers(self, reps, s0, s, k=1):
         this = []
         for i in range(reps):
             this += [nn.Conv2d(s0, s, k)]
-            nn.init.normal_(
-                this[-1].weight,
-                std=np.sqrt(1 / (s0 * (k ** 2)))
-            )
+            nn.init.normal_(this[-1].weight, std=np.sqrt(1 / (s0 * (k ** 2))))
             this += [Lambda(composite_activation)]
             s0 = s * 2
         return nn.Sequential(*this)
@@ -137,8 +139,16 @@ class UpsampleNet(nn.Module):
 
 
 class UpsampleNetNew(nn.Module):
-    def __init__(self, input_channels, reps=2, output_channels=3,
-                 interp_mode='bilinear', extra_upscale=False, k=7, s=10):
+    def __init__(
+        self,
+        input_channels,
+        reps=2,
+        output_channels=3,
+        interp_mode="bilinear",
+        extra_upscale=False,
+        k=7,
+        s=10,
+    ):
         super(UpsampleNetNew, self).__init__()
         self.interp_mode = interp_mode
         self.reps = reps
@@ -151,7 +161,7 @@ class UpsampleNetNew(nn.Module):
         self.conv3 = nn.Conv2d(inps, output_channels, 3, bias=False)
         nn.init.normal_(self.conv3.weight, std=np.sqrt(1 / (inps * (k ** 2))))
         self.final_act = nn.Sigmoid()
-        
+
     def get_layer(self, s0, s, k=1):
         this = nn.Conv2d(s0, s, k, bias=False, dilation=2)
         nn.init.normal_(this.weight, std=np.sqrt(1 / (s0 * (k ** 2))))
