@@ -51,7 +51,8 @@ class CPPNNet(nn.Module):
             use_bn=False,
             input_channels=2,
             output_channels=3,
-            final_act='sigmoid'):
+            final_act='sigmoid',
+            bias=True):
 
         super(CPPNNet, self).__init__()
         self.use_bn = use_bn
@@ -64,7 +65,7 @@ class CPPNNet(nn.Module):
             this = nn.Sequential()
             if self.use_bn:
                 this.add_module('bn{}'.format(i), nn.BatchNorm2d(chans0))
-            this.add_module('conv{}'.format(i), nn.Conv2d(chans0, chans1, kernel_size))
+            this.add_module('conv{}'.format(i), nn.Conv2d(chans0, chans1, kernel_size, bias=bias))
             # Initialise the weight to preserve mean/std
             nn.init.normal_(
                 this[-1].weight,
