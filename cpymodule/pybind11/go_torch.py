@@ -19,7 +19,6 @@ OTHER_DIM = 6
 
 
 class PixelRenderer:
-
     def __init__(self, w, h):
         # Make the window
         self.w = w
@@ -34,7 +33,9 @@ class PixelRenderer:
         self.frame_count += 1
         self.a = im.reshape(-1)
         example.render(self.a, self.w)
-        self.fps = 0.9 * self.fps + 0.1 * 1.0 / (time.time() - self.last_frame_time)
+        self.fps = 0.9 * self.fps + 0.1 * 1.0 / (
+            time.time() - self.last_frame_time
+        )
         if self.frame_count % 10 == 0:
             print(round(self.fps, 2))
         self.last_frame_time = time.time()
@@ -53,7 +54,9 @@ def get_targ():
 def interpolate_state_dicts(state_dicts, alpha):
     new_state_dict = deepcopy(state_dicts[0])
     for k in new_state_dict:
-        new_state_dict[k] = new_state_dict[k] * (1 - alpha) + state_dicts[1][k] * alpha
+        new_state_dict[k] = (
+            new_state_dict[k] * (1 - alpha) + state_dicts[1][k] * alpha
+        )
     return new_state_dict
 
 
@@ -63,14 +66,14 @@ size = [108 * 1, 192 * 1]
 # size = [108 * 2.513089005, 192 * 2.513089005]
 size = [int(round(i)) for i in size]
 mesh = get_xy_mesh(size)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 state_dicts, viz, m = get_net(device)
 
 mesh = mesh.to(device)
 
-other = torch.FloatTensor([0.] * OTHER_DIM).to(device)
-grad = torch.FloatTensor([0.] * OTHER_DIM).to(device)
+other = torch.FloatTensor([0.0] * OTHER_DIM).to(device)
+grad = torch.FloatTensor([0.0] * OTHER_DIM).to(device)
 grad_use = grad.clone()
 targ = get_targ()
 
@@ -83,7 +86,7 @@ def get_actual_size():
 
 h, w = get_actual_size()
 # h, w = 1080, 1920
-print(h, w, 'actual size')
+print(h, w, "actual size")
 
 current_sd_sel = list(range(1, len(state_dicts)))
 sd_changes_counter = 0
@@ -107,13 +110,20 @@ for i in range(50000):
                 if ev[0] == 3:
                     WARP_SPEED = ev[1] / 127.0 + 0.005
 
-    curr_state_dict_interp_grad = curr_state_dict_interp_target - curr_state_dict_interp_alpha
-    curr_state_dict_interp_alpha += curr_state_dict_interp_grad * TRANSITION_SPEED
+    curr_state_dict_interp_grad = (
+        curr_state_dict_interp_target - curr_state_dict_interp_alpha
+    )
+    curr_state_dict_interp_alpha += (
+        curr_state_dict_interp_grad * TRANSITION_SPEED
+    )
     if curr_state_dict_interp_alpha >= 1.0:
         # curr_state_dict_interp_target = -1.0
         if not changed:
-            viz.load_state_dict(interpolate_state_dicts(
-                [state_dicts[i_sd] for i_sd in current_sd_sel], 1.0))
+            viz.load_state_dict(
+                interpolate_state_dicts(
+                    [state_dicts[i_sd] for i_sd in current_sd_sel], 1.0
+                )
+            )
             current_sd_sel = [next_sd_sel, current_sd_sel[1]]
             sd_changes_counter += 1
             next_sd_sel = sd_changes_counter % len(state_dicts)
@@ -121,8 +131,11 @@ for i in range(50000):
     elif curr_state_dict_interp_alpha <= -1.0:
         # curr_state_dict_interp_target = 1.0
         if not changed:
-            viz.load_state_dict(interpolate_state_dicts(
-                [state_dicts[i_sd] for i_sd in current_sd_sel], 0.0))
+            viz.load_state_dict(
+                interpolate_state_dicts(
+                    [state_dicts[i_sd] for i_sd in current_sd_sel], 0.0
+                )
+            )
             current_sd_sel = [current_sd_sel[0], next_sd_sel]
             sd_changes_counter += 1
             next_sd_sel = sd_changes_counter % len(state_dicts)
@@ -130,10 +143,17 @@ for i in range(50000):
 
     # if i % 1 == 0:
     #     print(curr_state_dict_interp_alpha, 'alpha')
-    if curr_state_dict_interp_alpha <= 1.0 and curr_state_dict_interp_alpha >= -1.0:
+    if (
+        curr_state_dict_interp_alpha <= 1.0
+        and curr_state_dict_interp_alpha >= -1.0
+    ):
         changed = False
-        viz.load_state_dict(interpolate_state_dicts(
-            [state_dicts[i_sd] for i_sd in current_sd_sel], curr_state_dict_interp_alpha / 2 + 0.5))
+        viz.load_state_dict(
+            interpolate_state_dicts(
+                [state_dicts[i_sd] for i_sd in current_sd_sel],
+                curr_state_dict_interp_alpha / 2 + 0.5,
+            )
+        )
 
     now = time.time()
     # a *= 0

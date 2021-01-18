@@ -22,7 +22,7 @@ def get_net(device):
     widths = [30] * 10
     base = CPPNNet(widths, output_channels=widths[-1], input_channels=4)
     viz = UpsampleNet(base, reps=1)
-    base = '/home/liam/dreamz/data/state_dicts/'
+    base = "/home/liam/dreamz/data/state_dicts/"
     state_dicts = [torch.load(base + i) for i in os.listdir(base)]
     np.random.shuffle(state_dicts)
     viz.load_state_dict(state_dicts[0])

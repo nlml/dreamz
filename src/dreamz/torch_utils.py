@@ -16,8 +16,8 @@ def adjust_learning_rate(optimizer, multiplier=None, new_lr=None):
     state_dict = optimizer.state_dict()
     if multiplier is not None:
         assert new_lr is None
-        new_lr = next(iter(state_dict['param_groups']))['lr'] * multiplier
-    for param_group in state_dict['param_groups']:
-        param_group['lr'] = new_lr
+        new_lr = next(iter(state_dict["param_groups"]))["lr"] * multiplier
+    for param_group in state_dict["param_groups"]:
+        param_group["lr"] = new_lr
     optimizer.load_state_dict(state_dict)
-    print('Changed learning rate to {}'.format(new_lr))
+    print("Changed learning rate to {}".format(new_lr))

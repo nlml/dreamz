@@ -29,11 +29,8 @@ class Net(nn.Module):
         this = []
         for i in range(reps):
             this += [nn.Conv2d(s0, s, k)]
-            nn.init.normal_(
-                this[-1].weight,
-                std=np.sqrt(1 / (s0 * (k ** 2)))
-            )
-#             this += [nn.ReLU6()]
+            nn.init.normal_(this[-1].weight, std=np.sqrt(1 / (s0 * (k ** 2))))
+            #             this += [nn.ReLU6()]
             this += [Lambda(composite_activation)]
             s0 = s * 2
         return nn.Sequential(*this)
@@ -57,7 +54,7 @@ def train(size, widths, imagenet_model, chan_to_opt):
 
     def imgnet_objective(output):
         r = imagenet_model((output - mean) / std)
-    #     return torch.mean((r - targ) ** 2)
+        #     return torch.mean((r - targ) ** 2)
         return -r[:, chan_to_opt].mean()
 
     xy = get_xy_mesh(size).to(device)
@@ -66,22 +63,32 @@ def train(size, widths, imagenet_model, chan_to_opt):
         xy_crop = []
         for i in range(num):
             x0 = np.random.randint(0, 105 - 59)
-            xy_crop.append(xy[:, :, :, x0:x0 + 59])
+            xy_crop.append(xy[:, :, :, x0 : x0 + 59])
         xy_crop = torch.cat(xy_crop, 0)
         return viz(xy_crop)
+
     opt = optim.Adam(viz.parameters(), lr=0.002)
-    train_visualiser(imgnet_objective, im_gen_fn, opt, iters=150, log_interval=0)
+    train_visualiser(
+        imgnet_objective, im_gen_fn, opt, iters=150, log_interval=0
+    )
     adjust_learning_rate(opt, 0.1)
-    train_visualiser(imgnet_objective, im_gen_fn, opt, iters=50, log_interval=0)
+    train_visualiser(
+        imgnet_objective, im_gen_fn, opt, iters=50, log_interval=0
+    )
     return viz
 
 
 def get_imagenet_model():
     model = models.resnet18(pretrained=True)
-    model = nn.Sequential(*(
-        [i for i in model.children()][:-2] + [
-            nn.AdaptiveAvgPool2d(output_size=(1, 1)),
-            Lambda(lambda x: x[:, :, 0, 0])]))
+    model = nn.Sequential(
+        *(
+            [i for i in model.children()][:-2]
+            + [
+                nn.AdaptiveAvgPool2d(output_size=(1, 1)),
+                Lambda(lambda x: x[:, :, 0, 0]),
+            ]
+        )
+    )
     # model = nn.Sequential(*(
     #     [i for i in model.children()][:-3] + [
     #         nn.AdaptiveAvgPool2d(output_size=(1, 1)),
@@ -89,8 +96,8 @@ def get_imagenet_model():
     return model.eval()
 
 
-device = 'cuda'
-ims_savedir = '../../data/output_ims2/'
+device = "cuda"
+ims_savedir = "../../data/output_ims2/"
 widths = [20] * 8
 size = [59, 105]
 
@@ -99,15 +106,15 @@ imagenet_model = get_imagenet_model().to(device)
 
 def train_and_plot(chan_to_opt):
     now = time.time()
-    print('Training {}'.format(chan_to_opt))
+    print("Training {}".format(chan_to_opt))
     viz = train(size, widths, imagenet_model, chan_to_opt)
-    print('Took {} seconds'.format(time.time() - now))
+    print("Took {} seconds".format(time.time() - now))
     now = time.time()
-    print('Saving {}'.format(chan_to_opt))
+    print("Saving {}".format(chan_to_opt))
     xy_big = get_xy_mesh([277, 502]).to(device)
     res = viz(xy_big)
     imsave(get_latest_filename(ims_savedir), tch_im_to_np(res))
-    print('Took {} seconds'.format(time.time() - now))
+    print("Took {} seconds".format(time.time() - now))
 
 
 for chan_to_opt in range(5000):

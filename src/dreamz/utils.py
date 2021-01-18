@@ -11,7 +11,9 @@ def tch_im_to_pil(gend_img, size=None):
         size = im.shape[:2]
         if size[0] < 100:
             m = 10
-    pil_im = Image.fromarray(im).resize((size[1] * m, size[0] * m), Image.ANTIALIAS)
+    pil_im = Image.fromarray(im).resize(
+        (size[1] * m, size[0] * m), Image.ANTIALIAS
+    )
     return pil_im
 
 
@@ -29,10 +31,10 @@ def display_tch_im(gend_img, size=None):
     plt.show()
 
 
-def get_latest_filename(path_base, suffix='im'):
+def get_latest_filename(path_base, suffix="im"):
     if not os.path.exists(path_base):
         os.makedirs(path_base)
     for i in range(100000000):
-        path = os.path.join(path_base, suffix + '%07d.png' % i)
+        path = os.path.join(path_base, suffix + "%07d.png" % i)
         if not os.path.exists(path):
             return path
